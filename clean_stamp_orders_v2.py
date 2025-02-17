@@ -1,77 +1,123 @@
+import csv
 import pandas as pd
 import logging
-from datetime import datetime
-import csv
 
 # Configure logging
-logging.basicConfig(filename='csv_cleaning.log', level=logging.INFO,
+logging.basicConfig(filename='stamp_orders_cleaning.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Define the expected number of columns
-expected_columns = 44  # Updated to 44 columns
+expected_columns = 44
+
+# Lists to store valid and problematic rows
+valid_rows = []
+problematic_rows = []
 
 try:
-    # Read the fixed CSV file
-    df = pd.read_csv('stamp_orders_Week6_fixed.csv', dtype={'Tracking #': str}, low_memory=False)
+    # Open the CSV file and read it line by line
+    with open('stamp_orders_Week6.csv', 'r', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        headers = next(reader)  # Read the header row
+        
+        # Replace problematic field name
+        headers = [h.replace('State/Province', 'State_Province') for h in headers]
+        
+        # Ensure the headers match the expected number of columns
+        if len(headers) != expected_columns:
+            logging.warning(f"Header row has {len(headers)} columns, but expected {expected_columns}.")
+            # Adjust headers to match expected columns
+            if len(headers) < expected_columns:
+                headers = headers + [f"Column_{i+1}" for i in range(len(headers), expected_columns)]
+            else:
+                headers = headers[:expected_columns]  # Truncate extra columns
+        
+        for row_num, row in enumerate(reader, start=1):
+            try:
+                # Skip empty rows
+                if not row:
+                    logging.warning(f"Skipping empty row at line {row_num}")
+                    continue
+                    
+                # Clean the row data
+                cleaned_row = []
+                for col_idx, value in enumerate(row):
+                    # Remove any newlines, carriage returns, and extra whitespace
+                    cleaned_value = value.strip().replace('\n', ' ').replace('\r', '')
+                    
+                    # Convert tracking numbers to string type and handle special cases
+                    if col_idx == 6:  # Tracking # column
+                        # Always store tracking numbers as strings with ="number" format
+                        cleaned_value = f'="{cleaned_value}"' if cleaned_value else ''
+                        
+                    cleaned_row.append(cleaned_value)
+                
+                # Ensure the row has the expected number of columns
+                if len(cleaned_row) == expected_columns:
+                    valid_rows.append(cleaned_row)
+                else:
+                    if len(cleaned_row) > expected_columns:
+                        # Truncate rows that are too long
+                        cleaned_row = cleaned_row[:expected_columns]
+                        logging.warning(f"Row {row_num} has {len(row)} columns. Truncated to {expected_columns} columns.")
+                    else:
+                        # Pad rows that are too short
+                        cleaned_row = cleaned_row + [""] * (expected_columns - len(cleaned_row))
+                        logging.warning(f"Row {row_num} has {len(row)} columns. Padded to {expected_columns} columns.")
+                    
+                    valid_rows.append(cleaned_row)
+                    problematic_rows.append((row_num, row))
 
-    # Ensure the DataFrame has the expected number of columns
-    if len(df.columns) != expected_columns:
-        logging.warning(f"CSV file has {len(df.columns)} columns, but expected {expected_columns}.")
-        # Adjust columns to match expected columns
-        if len(df.columns) < expected_columns:
-            for i in range(len(df.columns), expected_columns):
-                df[f"Column_{i+1}"] = ""  # Add missing columns
-        else:
-            df = df.iloc[:, :expected_columns]  # Truncate extra columns
+            except Exception as e:
+                logging.error(f"Error processing row {row_num}: {str(e)}")
+                problematic_rows.append((row_num, f"Error processing row: {str(e)}"))
 
-    # Rename problematic columns
-    df.columns = [col.replace('/', '_') for col in df.columns]
+    # Convert valid rows to a DataFrame
+    df = pd.DataFrame(valid_rows, columns=headers)
 
-    # Convert columns to appropriate types
-    # Date columns
-    date_columns = ['Date Printed', 'Date Delivered', 'Ship Date', 'Refund Request Date', 'Order Date']
-    for col in date_columns:
+    # Ensure Tracking # column is string type with ="number" format
+    df['Tracking #'] = df['Tracking #'].astype(str)
+    df['Tracking #'] = df['Tracking #'].apply(lambda x: f'="{x}"' if x else '')
+
+    # Replace specified columns with #NUM! if all values are empty
+    columns_to_check = ['Extra Services', 'Cost Code', 'Refund Request Date', 'Refund Status', 
+                        'Refund Requested', 'Reference 1', 'Order ID', 'Store', 
+                        'Order Date', 'Order Total', 'Item SKUs', 'Items', 
+                        'Product Total', 'Shipping Paid', 'Tax Paid']
+    
+    for col in columns_to_check:
         if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors='coerce')  # Convert to datetime, invalid parsing -> NaT
+            df[col] = df[col].where(df[col].notna(), '')
+            if df[col].eq('').all():
+                df[col] = '#NUM!'
 
-    # Numeric columns (excluding Tracking # since it contains alphanumeric values)
-    numeric_columns = [
-        'Amount Paid', 'Adjusted Amount', 'Quoted Amount', 'Extra Services', 'Insured For',
-        'Cost Code', 'Refund Requested', 'Reference 1', 'Order ID', 'Store', 'Order Total',
-        'Item SKUs', 'Items', 'Product Total', 'Shipping Paid', 'Tax Paid', 'Duties and Taxes Amount'
-    ]
-    for col in numeric_columns:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric, invalid parsing -> NaN
-
-    # String columns (explicitly including Tracking #)
-    string_columns = [
-        'Payment Type', 'Shipment Status', 'Tracking #', 'Recipient', 'Name', 'Address 1',
-        'Address 2', 'Address 3', 'City', 'State_Province', 'Country', 'Weight', 'Carrier',
-        'Service', 'Tracking Confirmation', 'Printed Message', 'User', 'Refund Type',
-        'Refund Status', 'Insurance Provider'
-    ]
-    for col in string_columns:
-        if col in df.columns:
-            df[col] = df[col].astype(str)  # Ensure all values are strings
-
-    # Postal Code and Origin Zip (convert to integer)
-    if 'Postal Code' in df.columns:
-        df['Postal Code'] = pd.to_numeric(df['Postal Code'], errors='coerce').astype('Int64')  # Handle NaN
-    if 'Origin Zip' in df.columns:
-        df['Origin Zip'] = pd.to_numeric(df['Origin Zip'], errors='coerce').astype('Int64')  # Handle NaN
+    # Handle Address 2 and Address 3
+    if 'Address 2' in df.columns:
+        df['Address 2'] = df['Address 2'].where(df['Address 2'].notna(), '')
+        if df['Address 2'].eq('').all():
+            df['Address 2'] = '#NUM!'
+    
+    if 'Address 3' in df.columns:
+        df['Address 3'] = df['Address 3'].where(df['Address 3'].notna(), '')
+        if df['Address 3'].eq('').all():
+            df['Address 3'] = '#NUM!'
 
     # Remove any completely empty rows
     df = df.dropna(how='all')
 
-    # Save the cleaned DataFrame with proper quoting
+    # Log problematic rows
+    if problematic_rows:
+        logging.warning(f"Found {len(problematic_rows)} problematic rows that required cleaning.")
+        for row_num, row in problematic_rows:
+            logging.warning(f"Row {row_num}: {row}")
+
+    # Save the cleaned DataFrame with proper quoting and string formatting
     df.to_csv('cleaned_stamp_orders.csv', index=False, quoting=csv.QUOTE_ALL)
     logging.info("✅ Data cleaned and saved successfully.")
     print("✅ Data cleaned and saved successfully.")
 
 except FileNotFoundError:
-    logging.error("❌ The file 'stamp_orders_Week6_fixed.csv' was not found.")
-    print("❌ The file 'stamp_orders_Week6_fixed.csv' was not found.")
+    logging.error("❌ The file 'stamp_orders_Week6.csv' was not found.")
+    print("❌ The file 'stamp_orders_Week6.csv' was not found.")
 except Exception as e:
     logging.error(f"❌ An unexpected error occurred: {str(e)}")
     print(f"❌ An unexpected error occurred: {str(e)}")
