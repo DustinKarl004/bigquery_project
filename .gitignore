@@ -13,3 +13,6 @@
 /exported_postage_comparison
 
 .env
+
+# Ignore service account file
+service-account-file.json
