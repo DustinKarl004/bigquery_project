@@ -1,14 +1,13 @@
 import csv
 import pandas as pd
 import logging
-import numpy as np  # Import numpy
 
 # Configure logging
-logging.basicConfig(filename='stamp_orders_cleaning.log', level=logging.INFO,
+logging.basicConfig(filename='csv_cleaning.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Define the expected number of columns
-expected_columns = 44
+expected_columns = 33  # Updated to 33 columns
 
 # Lists to store valid and problematic rows
 valid_rows = []
@@ -16,12 +15,9 @@ problematic_rows = []
 
 try:
     # Open the CSV file and read it line by line
-    with open('stamp_orders_week7.csv', 'r', encoding='utf-8') as file:
+    with open('Order_Week7.csv', 'r', encoding='utf-8') as file: #ONLY WORKING WITH WEEK 7
         reader = csv.reader(file)
         headers = next(reader)  # Read the header row
-        
-        # Replace problematic field name
-        headers = [h.replace('State/Province', 'State_Province') for h in headers]
         
         # Ensure the headers match the expected number of columns
         if len(headers) != expected_columns:
@@ -41,15 +37,9 @@ try:
                     
                 # Clean the row data
                 cleaned_row = []
-                for col_idx, value in enumerate(row):
+                for value in row:
                     # Remove any newlines, carriage returns, and extra whitespace
                     cleaned_value = value.strip().replace('\n', ' ').replace('\r', '')
-                    
-                    # Convert tracking numbers to string type and handle special cases
-                    if col_idx == 6:  # Tracking # column
-                        # Always store tracking numbers as strings with ="number" format
-                        cleaned_value = f'"{cleaned_value}"' if cleaned_value else ''
-                        
                     cleaned_row.append(cleaned_value)
                 
                 # Ensure the row has the expected number of columns
@@ -75,41 +65,26 @@ try:
     # Convert valid rows to a DataFrame
     df = pd.DataFrame(valid_rows, columns=headers)
 
-    # Ensure Tracking # column is string type with ="number" format
-    if 'Tracking #' in df.columns:
-        df['Tracking #'] = df['Tracking #'].astype(str)
-        df['Tracking #'] = df['Tracking #'].apply(lambda x: f'="{x}"' if x else '')
+    # Clean the SmallParcelShipDate column
+    if 'SmallParcelShipDate' in df.columns:
+        # Attempt to convert SmallParcelShipDate to datetime, coercing errors to NaT
+        df['SmallParcelShipDate'] = pd.to_datetime(df['SmallParcelShipDate'], errors='coerce')
+        
+        # Log rows with invalid SmallParcelShipDate values
+        invalid_ship_dates = df[df['SmallParcelShipDate'].isna()]
+        if not invalid_ship_dates.empty:
+            logging.warning(f"Found {len(invalid_ship_dates)} rows with invalid SmallParcelShipDate values.")
+            for index, row in invalid_ship_dates.iterrows():
+                logging.warning(f"Row {index + 2}: SmallParcelShipDate = {row['SmallParcelShipDate']} (invalid)")
 
-    # Clean the "Postal Code" column
-    if "Postal Code" in df.columns:
-        # Replace "NA" or "N/A" with NaN
-        df['Postal Code'] = df['Postal Code'].replace(['NA', 'N/A', ''], np.nan)
+        # Drop rows with invalid SmallParcelShipDate values
+        df = df.dropna(subset=['SmallParcelShipDate'])
 
-        # Convert to integer type; errors='coerce' will convert invalid values to NaN
-        df['Postal Code'] = pd.to_numeric(df['Postal Code'], errors='coerce').fillna(0).astype(int)
-
-    # Replace specified columns with #NUM! if all values are empty
-    columns_to_check = ['Extra Services', 'Cost Code', 'Refund Request Date', 'Refund Status', 
-                        'Refund Requested', 'Reference 1', 'Order ID', 'Store', 
-                        'Order Date', 'Order Total', 'Item SKUs', 'Items', 
-                        'Product Total', 'Shipping Paid', 'Tax Paid']
-    
-    for col in columns_to_check:
+    # Convert numeric columns to appropriate types
+    numeric_columns = ['TotWeightImperial']  # Add other numeric columns as needed
+    for col in numeric_columns:
         if col in df.columns:
-            df[col] = df[col].where(df[col].notna(), '')
-            if df[col].eq('').all():
-                df[col] = '#NUM!'
-
-    # Handle Address 2 and Address 3
-    if 'Address 2' in df.columns:
-        df['Address 2'] = df['Address 2'].where(df['Address 2'].notna(), '')
-        if df['Address 2'].eq('').all():
-            df['Address 2'] = '#NUM!'
-    
-    if 'Address 3' in df.columns:
-        df['Address 3'] = df['Address 3'].where(df['Address 3'].notna(), '')
-        if df['Address 3'].eq('').all():
-            df['Address 3'] = '#NUM!'
+            df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Remove any completely empty rows
     df = df.dropna(how='all')
@@ -120,8 +95,8 @@ try:
         for row_num, row in problematic_rows:
             logging.warning(f"Row {row_num}: {row}")
 
-    # Save the cleaned DataFrame with proper quoting and string formatting
-    df.to_csv('cleaned_stamp_orders.csv', index=False, quoting=csv.QUOTE_ALL)
+    # Save the cleaned DataFrame with proper quoting
+    df.to_csv('cleaned_orders.csv', index=False, quoting=csv.QUOTE_ALL)
     logging.info("✅ Data cleaned and saved successfully.")
     print("✅ Data cleaned and saved successfully.")
 

@@ -24,7 +24,7 @@ def convert_timestamp(value):
 
 try:
     # Open the CSV file and read it line by line
-    with open('ExtensivTxRegRpt_week1.csv', 'r', encoding='utf-8') as file: # Only Working with Week 1
+    with open('ExtensivTxRegRpt_week7.csv', 'r', encoding='utf-8') as file: # Only Working with Week 1
         reader = csv.reader(file)
         headers = next(reader)  # Read the header row
         
@@ -144,6 +144,8 @@ try:
                     
                     # Check for "Total" column and ensure it's a float
                     if headers[col_idx] == "Total":
+                        # Remove dollar sign if present and convert to float
+                        cleaned_value = cleaned_value.replace('$', '').strip()  # Remove dollar sign
                         try:
                             cleaned_value = float(cleaned_value)  # Convert to float
                         except ValueError:
@@ -201,8 +203,8 @@ try:
     print("✅ Data cleaned and saved successfully.")
 
 except FileNotFoundError:
-    logging.error("❌ The file 'ExtensivTxRegRpt_week6.csv' was not found.")
-    print("❌ The file 'ExtensivTxRegRpt_week6.csv' was not found.")
+    logging.error("❌ The file was not found.")
+    print("❌ The file was not found.")
 except Exception as e:
     logging.error(f"❌ An unexpected error occurred: {str(e)}")
     print(f"❌ An unexpected error occurred: {str(e)}")

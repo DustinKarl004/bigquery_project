@@ -15,7 +15,7 @@ problematic_rows = []
 
 try:
     # Open the CSV file and read it line by line
-    with open('Order_Week1.csv', 'r', encoding='utf-8') as file:
+    with open('Order_Week1.csv', 'r', encoding='utf-8') as file: # WORKING WITH WEEK 1 - 6
         reader = csv.reader(file)
         headers = next(reader)  # Read the header row
         
@@ -101,8 +101,8 @@ try:
     print("✅ Data cleaned and saved successfully.")
 
 except FileNotFoundError:
-    logging.error("❌ The file 'Order_Week6.csv' was not found.")
-    print("❌ The file 'Order_Week6.csv' was not found.")
+    logging.error("❌ The file was not found.")
+    print("❌ The file was not found.")
 except Exception as e:
     logging.error(f"❌ An unexpected error occurred: {str(e)}")
     print(f"❌ An unexpected error occurred: {str(e)}")

@@ -100,8 +100,8 @@ try:
     print("✅ Data cleaned and saved successfully.")
 
 except FileNotFoundError:
-    logging.error("❌ The file 'ExtensivTxRegRpt_week6.csv' was not found.")
-    print("❌ The file 'ExtensivTxRegRpt_week6.csv' was not found.")
+    logging.error("❌ The file was not found.")
+    print("❌ The file was not found.")
 except Exception as e:
     logging.error(f"❌ An unexpected error occurred: {str(e)}")
     print(f"❌ An unexpected error occurred: {str(e)}")
