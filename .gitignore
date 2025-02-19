@@ -14,5 +14,5 @@
 
 .env
 
-# Ignore service account files
+# Ignore service account filess
 service-account-file.json
