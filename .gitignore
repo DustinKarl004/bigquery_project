@@ -1,3 +1,15 @@
 # Ignore all CSV files
 *.csv
 /venv
+
+/clean_exported_orders
+/clean_exported_stamp_orders
+/clean_exported_extensiv_txregrpt
+/clean_exported_postage_comparison
+
+/exported_orders
+/exported_stamp_orders
+/exported_extensiv_txregrpt
+/exported_postage_comparison
+
+.env

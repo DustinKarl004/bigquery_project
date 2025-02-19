@@ -1,6 +1,8 @@
 import csv
 import pandas as pd
 import logging
+from google.cloud import bigquery  # Import BigQuery client
+import os  # Import os for file handling
 
 # Configure logging
 logging.basicConfig(filename='postage_comparison_cleaning.log', level=logging.INFO,
@@ -13,9 +15,15 @@ expected_columns = 10
 valid_rows = []
 problematic_rows = []
 
+# Prompt user for file path
+file_path = input("Please drop the file path of the CSV file to process: ")
+
+# Prompt user for table name
+table_name = input("Please enter a name for the table: ")
+
 try:
     # Open the CSV file and read it line by line
-    with open('postage_comparison_week7.csv', 'r', encoding='utf-8') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
         headers = next(reader)  # Read the header row
         
@@ -40,6 +48,24 @@ try:
                 for col_idx, value in enumerate(row):
                     # Remove any newlines, carriage returns, and extra whitespace
                     cleaned_value = value.strip().replace('\n', ' ').replace('\r', '')
+                    
+                    # Ensure OrderId is an integer
+                    if headers[col_idx] == "OrderId":
+                        try:
+                            cleaned_value = int(cleaned_value)
+                        except ValueError:
+                            logging.error(f"Invalid OrderId format at row {row_num}: {cleaned_value}")
+                            cleaned_value = None  # Set to None if conversion fails
+                    
+                    # Convert specific columns to float
+                    float_columns = ["TotVolumeImperial", "Postage Cost", "Stamp Cost"]
+                    if headers[col_idx] in float_columns:
+                        try:
+                            cleaned_value = float(cleaned_value)  # Convert to float
+                        except ValueError:
+                            logging.error(f"Invalid {headers[col_idx]} format at row {row_num}: {cleaned_value}")
+                            cleaned_value = None  # Set to None if conversion fails
+                    
                     cleaned_row.append(cleaned_value)
                 
                 # Ensure the row has the expected number of columns
@@ -74,14 +100,38 @@ try:
         for row_num, row in problematic_rows:
             logging.warning(f"Row {row_num}: {row}")
 
-    # Save the cleaned DataFrame with proper quoting
-    df.to_csv('cleaned_postage_comparison.csv', index=False, quoting=csv.QUOTE_ALL)
+    # Save the cleaned DataFrame in the specified folder
+    output_folder = r'C:\Users\Elevate\bigquery_project\clean_exported_postage_comparison'
+    output_path = os.path.join(output_folder, f'{table_name}.csv')
+    df.to_csv(output_path, index=False, quoting=csv.QUOTE_ALL)
+    
     logging.info("✅ Data cleaned and saved successfully.")
     print("✅ Data cleaned and saved successfully.")
 
+    # Upload the cleaned data to BigQuery
+    client = bigquery.Client()  # Initialize BigQuery client
+    dataset_id = 'postage-calculator-tool.pct'  # Fixed dataset
+
+    # Define full table ID
+    table_id = f"{dataset_id}.{table_name}"  # Use user-defined table name
+
+    # Load job configuration with auto schema detection
+    job_config = bigquery.LoadJobConfig(
+        autodetect=True,  # Auto-detect schema
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE  # Overwrite if table exists
+    )
+
+    # Upload the DataFrame to BigQuery
+    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
+
+    # Wait for the upload job to complete
+    job.result()
+
+    print(f"✅ Data uploaded successfully to BigQuery: {table_id} (Schema auto-detected)")
+
 except FileNotFoundError:
-    logging.error("❌ The file 'postage_comparison.csv' was not found.")
-    print("❌ The file 'postage_comparison.csv' was not found.")
+    logging.error("❌ The file was not found.")
+    print("❌ The file was not found.")
 except Exception as e:
     logging.error(f"❌ An unexpected error occurred: {str(e)}")
     print(f"❌ An unexpected error occurred: {str(e)}")

@@ -1,6 +1,8 @@
 import csv
 import pandas as pd
 import logging
+from google.cloud import bigquery  # Import BigQuery client
+import os  # Import os for file handling
 import numpy as np  # Import numpy
 
 # Configure logging
@@ -14,9 +16,18 @@ expected_columns = 44
 valid_rows = []
 problematic_rows = []
 
+# Prompt user for file path
+file_path = input("Please drop the file path of the CSV file to process: ")
+
+# Prompt user for table name
+table_name = input("Please enter a name for the table: ")
+
+# Define output folder
+output_folder = r'C:\Users\Elevate\bigquery_project\clean_exported_stamp_orders'
+
 try:
     # Open the CSV file and read it line by line
-    with open('stamp_orders_week7.csv', 'r', encoding='utf-8') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
         headers = next(reader)  # Read the header row
         
@@ -28,7 +39,7 @@ try:
             logging.warning(f"Header row has {len(headers)} columns, but expected {expected_columns}.")
             # Adjust headers to match expected columns
             if len(headers) < expected_columns:
-                headers = headers + [f"Column_{i+1}" for i in range(len(headers), expected_columns)]
+                headers += [f"Column_{i+1}" for i in range(len(headers), expected_columns)]
             else:
                 headers = headers[:expected_columns]  # Truncate extra columns
         
@@ -47,7 +58,6 @@ try:
                     
                     # Convert tracking numbers to string type and handle special cases
                     if col_idx == 6:  # Tracking # column
-                        # Always store tracking numbers as strings with ="number" format
                         cleaned_value = f'"{cleaned_value}"' if cleaned_value else ''
                         
                     cleaned_row.append(cleaned_value)
@@ -57,12 +67,10 @@ try:
                     valid_rows.append(cleaned_row)
                 else:
                     if len(cleaned_row) > expected_columns:
-                        # Truncate rows that are too long
                         cleaned_row = cleaned_row[:expected_columns]
                         logging.warning(f"Row {row_num} has {len(row)} columns. Truncated to {expected_columns} columns.")
                     else:
-                        # Pad rows that are too short
-                        cleaned_row = cleaned_row + [""] * (expected_columns - len(cleaned_row))
+                        cleaned_row += [""] * (expected_columns - len(cleaned_row))
                         logging.warning(f"Row {row_num} has {len(row)} columns. Padded to {expected_columns} columns.")
                     
                     valid_rows.append(cleaned_row)
@@ -87,6 +95,23 @@ try:
 
         # Convert to integer type; errors='coerce' will convert invalid values to NaN
         df['Postal Code'] = pd.to_numeric(df['Postal Code'], errors='coerce').fillna(0).astype(int)
+
+    # Add data types for specified columns
+    date_columns = ['Date Printed', 'Date Delivered']
+    float_columns = ['Quoted Amount', 'Extra Services']
+    integer_columns = ['Origin Zip', 'Insured For', 'Duties and Taxes Amount']
+
+    for col in date_columns:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors='coerce')
+
+    for col in float_columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    for col in integer_columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
 
     # Replace specified columns with #NUM! if all values are empty
     columns_to_check = ['Extra Services', 'Cost Code', 'Refund Request Date', 'Refund Status', 
@@ -120,10 +145,31 @@ try:
         for row_num, row in problematic_rows:
             logging.warning(f"Row {row_num}: {row}")
 
-    # Save the cleaned DataFrame with proper quoting and string formatting
-    df.to_csv('cleaned_stamp_orders.csv', index=False, quoting=csv.QUOTE_ALL)
+    # Save the cleaned DataFrame in the specified folder
+    output_path = os.path.join(output_folder, f'{table_name}.csv')  # Save using the table name
+    df.to_csv(output_path, index=False, quoting=csv.QUOTE_ALL)
     logging.info("✅ Data cleaned and saved successfully.")
     print("✅ Data cleaned and saved successfully.")
+    # Upload the cleaned data to BigQuery
+    client = bigquery.Client()  # Initialize BigQuery client
+    dataset_id = 'postage-calculator-tool.pct'  # Fixed dataset
+
+    # Define full table ID
+    table_id = f"{dataset_id}.{table_name}"  # Use user-defined table name
+
+    # Load job configuration with auto schema detection
+    job_config = bigquery.LoadJobConfig(
+        autodetect=True,  # Auto-detect schema
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE  # Overwrite if table exists
+    )
+
+    # Upload the DataFrame to BigQuery
+    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
+
+    # Wait for the upload job to complete
+    job.result()
+
+    print(f"✅ Data uploaded successfully to BigQuery: {table_id} (Schema auto-detected)")
 
 except FileNotFoundError:
     logging.error("❌ The file was not found.")
