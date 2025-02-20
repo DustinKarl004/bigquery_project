@@ -68,7 +68,7 @@ try:
 
     df = pd.DataFrame(valid_rows, columns=headers)
 
-    # Convert numeric columns to appropriate types
+    # Convert numeric columns to appropriate typess
     numeric_columns = ['TotWeightImperial']
     for col in numeric_columns:
         if col in df.columns:
