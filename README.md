@@ -36,7 +36,7 @@ Temporary (Current PowerShell Session Only)
 
 Run this command inside PowerShell:
 
-$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\Users\Elevate\bigquery_project\service-account-file.json"
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\Users\Elevate\bigquery_project\service-account-file.json" #change it with the file path
 
 Verify:
 

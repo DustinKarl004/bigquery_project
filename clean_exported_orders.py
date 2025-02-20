@@ -68,11 +68,27 @@ try:
 
     df = pd.DataFrame(valid_rows, columns=headers)
 
-    # Convert numeric columns to appropriate typess
-    numeric_columns = ['TotWeightImperial']
-    for col in numeric_columns:
+    # Convert numeric columns to appropriate types
+    numeric_columns = {
+        'RowNumber': 'int',
+        'OrderId': 'int',
+        'CreationDate': 'datetime64[ns]',
+        'BatchOrderId': 'int',
+        'TotPackages': 'int',
+        'ParcelLabelType': 'int',
+        'SmallParcelShipDate': 'datetime64[ns]',
+        'TotalItemQty': 'int',
+        'TotVolumeImperial': 'float'
+    }
+
+    for col, dtype in numeric_columns.items():
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
+            if dtype == 'int':
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+            elif dtype == 'float':
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+            elif dtype == 'datetime64[ns]':
+                df[col] = pd.to_datetime(df[col], errors='coerce')
 
     df = df.dropna(how='all')
 
