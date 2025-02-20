@@ -1,7 +1,6 @@
 import csv
 import pandas as pd
 import logging
-from datetime import datetime
 from google.cloud import bigquery  # Import BigQuery client
 import os  # Import os for file handling
 
@@ -15,14 +14,6 @@ expected_columns = 22
 # Lists to store valid and problematic rows
 valid_rows = []
 problematic_rows = []
-
-def convert_timestamp(value):
-    try: 
-        # Convert the timestamp to a standard format
-        return datetime.strptime(value, '%m/%d/%Y %I:%M:%S %p').strftime('%Y-%m-%d %H:%M:%S')
-    except ValueError:
-        logging.error(f"Invalid timestamp format: {value}")
-        return None  # Return None for invalid timestamps
 
 # Prompt user for file path
 file_path = input("Please drop the file path of the CSV file to process: ")
@@ -60,31 +51,6 @@ try:
                 for col_idx, value in enumerate(row):
                     # Remove any newlines, carriage returns, and extra whitespace
                     cleaned_value = value.strip().replace('\n', ' ').replace('\r', '')
-                    
-                    # Convert timestamp if it's in the "StartDate" or "EndDate" column
-                    if headers[col_idx] in ["StartDate", "EndDate"]:
-                        cleaned_value = convert_timestamp(cleaned_value)
-                    
-                    # Check for integer and float columns
-                    int_columns = ["TransactionID", "QtyIn", "QtyOut", "Textbox80", "Textbox69", "Storage", "Freight3"]
-                    float_columns = ["Handling", "Materials", "Special", "FreightPP", "Total"]
-                    
-                    if headers[col_idx] in int_columns:
-                        try:
-                            cleaned_value = int(cleaned_value)  # Convert to integer
-                        except ValueError:
-                            logging.error(f"Invalid {headers[col_idx]} format at row {row_num}: {cleaned_value}")
-                            cleaned_value = None  # Set to None if conversion fails
-                    
-                    if headers[col_idx] in float_columns:
-                        if headers[col_idx] == "Total":
-                            cleaned_value = cleaned_value.replace('$', '').strip()  # Remove dollar sign
-                        try:
-                            cleaned_value = float(cleaned_value)  # Convert to float
-                        except ValueError:
-                            logging.error(f"Invalid {headers[col_idx]} format at row {row_num}: {cleaned_value}")
-                            cleaned_value = None  # Set to None if conversion fails
-                    
                     cleaned_row.append(cleaned_value)
                 
                 # Ensure the row has the expected number of columns
@@ -109,12 +75,6 @@ try:
 
     # Convert valid rows to a DataFrame
     df = pd.DataFrame(valid_rows, columns=headers)
-
-    # Attempt to convert the "Date" column to datetime format
-    if "Date" in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')  # Coerce errors to NaT
-        if df['Date'].isnull().all():
-            logging.warning("All values in 'Date' column could not be parsed. Please check the input data.")
 
     # Remove any completely empty rows
     df = df.dropna(how='all')

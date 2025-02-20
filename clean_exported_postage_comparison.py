@@ -58,7 +58,7 @@ try:
                             cleaned_value = None  # Set to None if conversion fails
                     
                     # Convert specific columns to float
-                    float_columns = ["TotVolumeImperial", "Postage Cost", "Stamp Cost"]
+                    float_columns = ["TotVolumeImperial", "Postage Cost"]
                     if headers[col_idx] in float_columns:
                         try:
                             cleaned_value = float(cleaned_value)  # Convert to float
