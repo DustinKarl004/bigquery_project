@@ -27,7 +27,7 @@ def choose_csv_to_clean():
 
 def run_script(script_file):
     if os.path.exists(script_file):
-        # Use the Python interpreter from the virtual environment
+        # Use the Python interpreter from the virtual environments
         python_executable = os.path.join(os.getcwd(), 'venv', 'Scripts', 'python')
         subprocess.run([python_executable, script_file])
     else:
