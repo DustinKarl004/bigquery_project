@@ -1,6 +1,8 @@
 import os
 import subprocess
 
+#run this script first
+
 # before running this, run this for terminal: echo $env:GOOGLE_APPLICATION_CREDENTIALS
 # for command prompt: echo %GOOGLE_APPLICATION_CREDENTIALS%
 
