@@ -68,16 +68,6 @@ try:
 
     df = pd.DataFrame(valid_rows, columns=headers)
 
-    # Clean the SmallParcelShipDate column
-    if 'SmallParcelShipDate' in df.columns:
-        df['SmallParcelShipDate'] = pd.to_datetime(df['SmallParcelShipDate'], errors='coerce')
-        invalid_ship_dates = df[df['SmallParcelShipDate'].isna()]
-        if not invalid_ship_dates.empty:
-            logging.warning(f"Found {len(invalid_ship_dates)} rows with invalid SmallParcelShipDate values.")
-            for index, row in invalid_ship_dates.iterrows():
-                logging.warning(f"Row {index + 2}: SmallParcelShipDate = {row['SmallParcelShipDate']} (invalid)")
-        df = df.dropna(subset=['SmallParcelShipDate'])
-
     # Convert numeric columns to appropriate types
     numeric_columns = ['TotWeightImperial']
     for col in numeric_columns:

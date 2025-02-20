@@ -1,6 +1,9 @@
 import os
 import subprocess
 
+# before running this, run this for terminal: echo $env:GOOGLE_APPLICATION_CREDENTIALS
+# for command prompt: echo %GOOGLE_APPLICATION_CREDENTIALS%
+
 def choose_csv_to_clean():
     print("Choose a csv to clean:")
     print("1. Exported Orders")
