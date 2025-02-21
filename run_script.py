@@ -1,10 +1,10 @@
 import os
 import subprocess
 
-#run this script first
+# Run this script first
 
-# before running this, run this for terminal: echo $env:GOOGLE_APPLICATION_CREDENTIALS
-# for command prompt: echo %GOOGLE_APPLICATION_CREDENTIALS%
+# Before running this, run this for terminal: echo $env:GOOGLE_APPLICATION_CREDENTIALS
+# For command prompt: echo %GOOGLE_APPLICATION_CREDENTIALS%
 
 def choose_csv_to_clean():
     print("Choose a csv to clean:")
@@ -15,15 +15,16 @@ def choose_csv_to_clean():
 
     choice = input("Enter the number corresponding to your choice: ")
     
-    script_paths = {
-        '1': r"C:\Users\Elevate\bigquery_project\clean_exported_orders.py",
-        '2': r"C:\Users\Elevate\bigquery_project\clean_exported_stamp_orders.py",
-        '3': r"C:\Users\Elevate\bigquery_project\clean_exported_extensiv_txregrpt.py",
-        '4': r"C:\Users\Elevate\bigquery_project\clean_exported_postage_comparison.py"
+    script_filenames = {
+        '1': "clean_exported_orders.py",
+        '2': "clean_exported_stamp_orders.py",
+        '3': "clean_exported_extensiv_txregrpt.py",
+        '4': "clean_exported_postage_comparison.py"
     }
 
-    if choice in script_paths:
-        run_script(script_paths[choice])
+    if choice in script_filenames:
+        script_file = os.path.join(os.getcwd(), script_filenames[choice])
+        run_script(script_file)
     else:
         print("Invalid choice. Please select a valid option.")
 
