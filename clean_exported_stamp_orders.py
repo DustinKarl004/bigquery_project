@@ -56,10 +56,6 @@ try:
                     # Remove any newlines, carriage returns, and extra whitespace
                     cleaned_value = value.strip().replace('\n', ' ').replace('\r', '')
                     
-                    # Convert tracking numbers to string type and handle special cases
-                    if col_idx == 6:  # Tracking # column
-                        cleaned_value = f'"{cleaned_value}"' if cleaned_value else ''
-                        
                     cleaned_row.append(cleaned_value)
                 
                 # Ensure the row has the expected number of columns
@@ -82,11 +78,6 @@ try:
 
     # Convert valid rows to a DataFrame
     df = pd.DataFrame(valid_rows, columns=headers)
-
-    # Ensure Tracking # column is string type with ="number" format
-    if 'Tracking #' in df.columns:
-        df['Tracking #'] = df['Tracking #'].astype(str)
-        df['Tracking #'] = df['Tracking #'].apply(lambda x: f'="{x}"' if x else '')
 
     # Clean the "Postal Code" column
     if "Postal Code" in df.columns:
@@ -150,6 +141,7 @@ try:
     df.to_csv(output_path, index=False, quoting=csv.QUOTE_ALL)
     logging.info("✅ Data cleaned and saved successfully.")
     print("✅ Data cleaned and saved successfully.")
+    
     # Upload the cleaned data to BigQuery
     client = bigquery.Client()  # Initialize BigQuery client
     dataset_id = 'postage-calculator-tool.pct'  # Fixed dataset
