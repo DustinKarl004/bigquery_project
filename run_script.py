@@ -111,6 +111,8 @@ def process_stamp_orders(file_path, week):
             
             # Clean the headers
             headers = [clean_column_name(h) for h in headers]
+            # Replace Tracking__ with TrackingNumber
+            headers = ['TrackingNumber' if h == 'Tracking__' else h for h in headers]
             
             if len(headers) != expected_columns:
                 logging.warning(f"Header row has {len(headers)} columns, but expected {expected_columns}.")
@@ -148,6 +150,10 @@ def process_stamp_orders(file_path, week):
                     problematic_rows.append((row_num, f"Error processing row: {str(e)}"))
 
         df = pd.DataFrame(valid_rows, columns=headers)
+
+        # Remove tracking numbers that are just = or ""
+        if 'TrackingNumber' in df.columns:
+            df = df[~df['TrackingNumber'].isin(['=', '""'])]
 
         if "Postal_Code" in df.columns:
             df['Postal_Code'] = df['Postal_Code'].replace(['NA', 'N/A', ''], np.nan)
