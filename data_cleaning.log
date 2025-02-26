@@ -1,0 +1,28 @@
+2025-02-27 00:46:35,712 - WARNING - Header row has 34 columns, but expected 33.
+2025-02-27 00:46:38,972 - INFO - \u2705 Exported Orders.csv cleaned and saved successfully.
+2025-02-27 00:46:50,756 - WARNING - \u26a0\ufe0f File not found: Stamp Orders.csv
+2025-02-27 00:46:51,169 - WARNING - Skipping empty row at line 42610
+2025-02-27 00:46:51,844 - INFO - \u2705 ExtensivTxRegRpt.csv cleaned and saved successfully.
+2025-02-27 00:46:54,433 - ERROR - \u274c Error processing ExtensivTxRegRpt.csv: 400 POST https://bigquery.googleapis.com/upload/bigquery/v2/projects/postage-calculator-tool/jobs?uploadType=multipart: Invalid field name "\ufefftextbox67". Fields must contain the allowed characters, and be at most 300 characters long. For allowed characters, please refer to https://cloud.google.com/bigquery/docs/schemas#column_names
+2025-02-27 00:47:25,065 - WARNING - Header row has 34 columns, but expected 33.
+2025-02-27 00:47:28,306 - INFO - \u2705 Exported Orders.csv cleaned and saved successfully.
+2025-02-27 00:47:45,005 - INFO - \u2705 Stamps Orders.csv cleaned and saved successfully.
+2025-02-27 00:47:51,942 - ERROR - \u274c Error processing Stamps Orders.csv: 400 POST https://bigquery.googleapis.com/upload/bigquery/v2/projects/postage-calculator-tool/jobs?uploadType=resumable: Invalid field name "\ufeff"Date Printed"". Fields must contain the allowed characters, and be at most 300 characters long. For allowed characters, please refer to https://cloud.google.com/bigquery/docs/schemas#column_names
+2025-02-27 00:47:52,309 - WARNING - Skipping empty row at line 42610
+2025-02-27 00:47:53,027 - INFO - \u2705 ExtensivTxRegRpt.csv cleaned and saved successfully.
+2025-02-27 00:47:55,856 - ERROR - \u274c Error processing ExtensivTxRegRpt.csv: 400 POST https://bigquery.googleapis.com/upload/bigquery/v2/projects/postage-calculator-tool/jobs?uploadType=multipart: Invalid field name "\ufefftextbox67". Fields must contain the allowed characters, and be at most 300 characters long. For allowed characters, please refer to https://cloud.google.com/bigquery/docs/schemas#column_names
+2025-02-27 00:50:54,514 - ERROR - Error processing Exported Orders: string index out of range
+2025-02-27 00:50:54,514 - ERROR - \u274c Error processing Exported Orders.csv: string index out of range
+2025-02-27 00:50:57,887 - INFO - \u2705 Stamps Orders.csv cleaned and saved successfully.
+2025-02-27 00:51:13,057 - WARNING - Skipping empty row at line 42610
+2025-02-27 00:51:13,662 - INFO - \u2705 ExtensivTxRegRpt.csv cleaned and saved successfully.
+2025-02-27 00:53:40,232 - WARNING - Header row has 34 columns, but expected 33.
+2025-02-27 00:53:43,343 - INFO - \u2705 Exported Orders.csv cleaned and saved successfully.
+2025-02-27 00:53:58,987 - INFO - \u2705 Stamps Orders.csv cleaned and saved successfully.
+2025-02-27 00:54:15,875 - WARNING - Skipping empty row at line 42610
+2025-02-27 00:54:16,737 - INFO - \u2705 ExtensivTxRegRpt.csv cleaned and saved successfully.
+2025-02-27 00:56:04,758 - WARNING - Header row has 34 columns, but expected 33.
+2025-02-27 00:56:07,936 - INFO - \u2705 Exported Orders.csv cleaned and saved successfully.
+2025-02-27 00:56:26,203 - INFO - \u2705 Stamps Orders.csv cleaned and saved successfully.
+2025-02-27 00:56:41,028 - WARNING - Skipping empty row at line 42610
+2025-02-27 00:56:41,701 - INFO - \u2705 ExtensivTxRegRpt.csv cleaned and saved successfully.
