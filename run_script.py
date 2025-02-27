@@ -270,8 +270,9 @@ def main():
     # Get folder path from user
     folder_path = input("Please drag and drop the folder containing the CSV files: ").strip('"')
     
-    # Get week number from user
-    week = input("Please enter the week number (e.g., week1): ")
+    # Get week number from user and prepend "week"
+    week_num = input("Please enter the week number (e.g., 1): ")
+    week = f"week{week_num}"
     
     # Create cleaned folder if it doesn't exist
     cleaned_folder = os.path.join(os.getcwd(), 'cleaned')
